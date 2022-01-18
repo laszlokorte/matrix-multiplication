@@ -5,6 +5,7 @@
 	let columnsA = 3
 	$: rowsB = columnsA
 	let columnsB = 4
+	let gridAlign = false
 	
 	let focus = null
 	
@@ -116,6 +117,11 @@
 			focus = {column: num%columnsB, row: Math.floor(num/columnsB)}
 		}
 	}
+
+	function jumpStep(evt) {
+		console.log(evt.currentTarget.dataset.step)
+		setFocusStep(1*evt.currentTarget.dataset.step)
+	}
 	
 	function shuffleA() {
 		valuesA = Array(rowLimit*columnLimit).fill(0).map(() => Math.round(10*Math.random()))
@@ -138,6 +144,40 @@
 		.equation {
 			flex-wrap: wrap;
 		}
+	}
+
+	.equation.grid-align {
+		display: grid;
+		grid-template-columns: 
+		[operator-start op1-start] auto 
+		[equals-start op1-end ] auto 
+		[operator-end equals-end op2-start result-start] auto 
+		[op2-end result-end];
+		grid-template-rows: [op2-start operator-start] auto [operator-end op2-end op1-start result-start equals-start] auto [equals-end op1-end result-end];
+	}
+
+	.grid-align > .grid-operand-1 {
+		grid-area: op1;
+	}
+
+	.grid-align > .grid-operand-2 {
+		grid-area: op2;
+	}
+
+	.grid-align > .grid-result {
+		grid-area: result;
+	}
+
+	.grid-align > .grid-operator {
+		grid-area: operator;
+		align-self: center;
+		justify-self: center;
+		font-size: 3em;
+	}
+
+	.grid-align > .grid-equals {
+		grid-area: equals;
+		font-size: 3em;
 	}
 	
 	.matrix {
@@ -216,6 +256,7 @@
 		grid-row: horizontal;
 		gap: 0.5em;
 		padding: 0.2em;
+		align-self: end;
 	}
 	
 	.control-vertical {
@@ -231,6 +272,16 @@
 		display: flex;
 		gap: 0.5em;
 		padding: 0.2em;
+		align-self: end;
+	}
+	
+	.control-top {
+		grid-area: horizontal;
+		display: flex;
+		gap: 0.5em;
+		padding: 0.2em;
+		align-self: end;
+		justify-self: center;
 	}
 	
 	button {
@@ -289,7 +340,7 @@
 	
 	dl {
 		display: grid;
-		grid-template-columns: max-content max-content;
+		grid-template-columns: max-content max-content max-content;
 		align-items: center;
 		justify-content: start;
 		gap: 1em;
@@ -303,6 +354,8 @@
 	dd {
 		margin: 0;
 		padding: 0;
+		display: flex;
+		gap:  0.5em;
 	}
 	
 	h1 {
@@ -343,9 +396,13 @@
 <p>
 	Below you can enter two matrices to see how they are multiplied. Use the round buttons to configure the matrix dimensions. The height of Matrix B must be equal to the width of Matrix A.
 </p>
+
+<p>
+	By checking the <strong>Align Matrices</strong> checkbox you can align the Matrix B above the result matrix so that the resulting cells match the rows and columns of their calculation. 
+</p>
 	
-	<div class="equation">
-	<div class="matrix-control">
+	<div class="equation" class:grid-align={gridAlign}>
+	<div class="matrix-control grid-operand-1">
 		<div class="matrix-label">Matrix A<br><span>({rowsA} rows, {columnsA} columns)</span></div>
 		<div class="control-corner">
 			<button title="Shuffle value of Matrix A" on:click={shuffleA}>🔀️</button>
@@ -373,11 +430,11 @@
 			{/if}
 		</div>
 	</div>
-	<div class="operator">
+	<div class="operator grid-operator">
 		&times;
 	</div>
 	
-	<div class="matrix-control">
+	<div class="matrix-control grid-operand-2">
 		<div class="matrix-label">Matrix B<br><span>({rowsB} rows, {columnsB} columns)</span></div>
 		<div class="control-corner">
 			<button on:click={shuffleB} title="Shuffle values of Matrix B">🔀️</button>
@@ -405,11 +462,14 @@
 			{/if}
 		</div>
 	</div>
-	<div class="operator">
+	<div class="operator grid-equals">
 		=
 	</div>
 	
-	<div class="matrix-control">
+	<div class="matrix-control grid-result">
+		<div class="control-top">
+			<label><input type="checkbox" bind:checked={gridAlign}> Align matrices</label>
+		</div>
 		<div class="matrix-label">Result<br><span>({rowsResult} rows, {columnsResult} columns)</span></div>
 	<div class="matrix" style={`--rows: ${rowsA}; --columns: ${columnsB};`}>
 	{#each result as rows, r}
@@ -430,6 +490,9 @@
 <dl>
 	<dt><label for="step">Step: <span>{focus ? focus.row*columnsB + focus.column + 1 : '-'}/{rowsA*columnsB}</span></label></dt>
 	<dd><input id="step" type="range" min="0" max={rowsA*columnsB} value={focus ? focus.row*columnsB + focus.column + 1 : 0} on:input={(evt) => setFocusStep(evt.currentTarget.value - 1)} /></dd>
+	<dd>
+		<button data-step={focus ? focus.row*columnsB + focus.column - 1 : -1} on:click={jumpStep} disabled={!focus || focus.row*columnsB + focus.column + 1 < 1}>⮜</button>
+		<button data-step={focus ? focus.row*columnsB + focus.column + 1 : 0} disabled={focus && focus.row*columnsB + focus.column + 1 + 1 > rowsA*columnsB} on:click={jumpStep}>⮞</button></dd>
 </dl>
 
 {#if sum}
