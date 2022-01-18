@@ -198,6 +198,10 @@
 		justify-self: center;
 		text-align: center;
 	}
+
+	.matrix-label > span {
+		white-space: nowrap;
+	}
 	
 	.control-corner {
 		grid-column: vertical;
@@ -329,7 +333,7 @@
 	
 	<div class="equation">
 	<div class="matrix-control">
-		<div class="matrix-label">Matrix A<br>({columnsA} columns, {rowsA} rows)</div>
+		<div class="matrix-label">Matrix A<br><span>({rowsA} rows, {columnsA} columns)</span></div>
 		<div class="control-corner">
 			<button title="Shuffle value of Matrix A" on:click={shuffleA}>🔀️</button>
 		</div>
@@ -361,7 +365,7 @@
 	</div>
 	
 	<div class="matrix-control">
-		<div class="matrix-label">Matrix B<br>({columnsB} columns, {rowsB} rows)</div>
+		<div class="matrix-label">Matrix B<br><span>({rowsB} rows, {columnsB} columns)</span></div>
 		<div class="control-corner">
 			<button on:click={shuffleB} title="Shuffle values of Matrix B">🔀️</button>
 		</div>
@@ -393,7 +397,7 @@
 	</div>
 	
 	<div class="matrix-control">
-		<div class="matrix-label">Result<br>({columnsResult} columns, {rowsResult} rows)</div>
+		<div class="matrix-label">Result<br><span>({rowsResult} rows, {columnsResult} columns)</span></div>
 	<div class="matrix" style={`--rows: ${rowsA}; --columns: ${columnsB};`}>
 	{#each result as rows, r}
 		{#each rows as v, c}
