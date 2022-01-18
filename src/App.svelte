@@ -130,6 +130,14 @@
 	.equation {
 		display: flex;
 		align-items: center;
+		justify-content: center;
+		gap: 1em 0;
+	}
+
+	@media (max-width: 60em) {
+		.equation {
+			flex-wrap: wrap;
+		}
 	}
 	
 	.matrix {
@@ -308,11 +316,16 @@
 	
 	.controls {
 		display: grid;
-		justify-content: center;
+		max-width: max-content;
 		justify-items: center;
-		max-width: 50em;
 		margin: auto;
 		gap: 1em;
+		padding: 0 3em 1em;
+	}
+
+	p {
+		max-width: 40em;
+		margin: 1em auto;
 	}
 </style>
 
@@ -327,7 +340,7 @@
 	Matrix Multiplication
 </h1>
 	
-	<p>
+<p>
 	Below you can enter two matrices to see how they are multiplied. Use the round buttons to configure the matrix dimensions. The height of Matrix B must be equal to the width of Matrix A.
 </p>
 	
