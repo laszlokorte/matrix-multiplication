@@ -130,6 +130,22 @@
 	function shuffleB() {
 		valuesB = Array(rowLimit*columnLimit).fill(0).map(() => Math.round(10*Math.random()))
 	}
+	
+	function clearA() {
+		valuesA = Array(rowLimit*columnLimit).fill(0)
+	}
+	
+	function clearB() {
+		valuesB = Array(rowLimit*columnLimit).fill(0)
+	}
+	
+	function diagonalA() {
+		valuesA = Array(rowLimit*columnLimit).fill(0).map((x,i) => i%columnLimit == Math.floor(i/columnLimit) ? 1 : x)
+	}
+	
+	function diagonalB() {
+		valuesB = Array(rowLimit*columnLimit).fill(0).map((x,i) => i%columnLimit == Math.floor(i/columnLimit) ? 1 : x)
+	}
 </script>
 
 <style>
@@ -245,6 +261,9 @@
 		align-self: center;
 		justify-self: center;
 		text-align: center;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
 	}
 
 	.matrix-label > span {
@@ -291,6 +310,8 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
+		justify-items: center;
+		justify-content: center;
 		cursor: pointer;
 		margin: 0;
 		background: #0ad;
@@ -298,14 +319,25 @@
 		font-weight: bold;
 		border: none;
 		box-shadow: 1px 1px 3px #4444;
-		border-radius: 100%;
+		border-radius: 10%;
 		line-height: 1;
 		font-size: 1em;
+		font-family: sans-serif;
 	}
 	
 	button:disabled {
 		cursor: not-allowed;
 		background: #aaa;
+	}
+	
+	button:focus {
+		outline: 4px solid orange;
+	}
+
+	.button-row {
+		display: flex;
+		gap: 0.5em;
+		margin: 1em;
 	}
 	
 	.focus {
@@ -365,6 +397,7 @@
 	
 	label {
 		font-weight: bold;
+		cursor: pointer;
 	}
 	
 	.controls {
@@ -403,17 +436,24 @@
 	
 	<div class="equation" class:grid-align={gridAlign}>
 	<div class="matrix-control grid-operand-1">
-		<div class="matrix-label">Matrix A<br><span>({rowsA} rows, {columnsA} columns)</span></div>
+		<div class="matrix-label">
+			<span>Matrix A</span>
+			<span>({rowsA} rows, {columnsA} columns)</span>
+			<span class="button-row">
+				<button title="Clear Matrix A" on:click={clearA}>0</button>
+				<button title="Make Matrix A diagonal" on:click={diagonalA}>⋱</button>
+				<button title="Shuffle value of Matrix A" on:click={shuffleA}>⚄</button>
+			</span>
+		</div>
 		<div class="control-corner">
-			<button title="Shuffle value of Matrix A" on:click={shuffleA}>🔀️</button>
 		</div>
 		<div class="control-vertical">
-			<button title="Decrease rows of Matrix A" on:click={decreaseRowsA} disabled={!rowsACanDecrease}>-</button>
-			<button title="Increase rows of Matrix A" on:click={increaseRowsA} disabled={!rowsACanIncrease}>+</button>
+			<button title="Decrease rows of Matrix A" on:click={decreaseRowsA} disabled={!rowsACanDecrease}>－</button>
+			<button title="Increase rows of Matrix A" on:click={increaseRowsA} disabled={!rowsACanIncrease}>＋</button>
 		</div>
 		<div class="control-horizontal">
-			<button title="Decrease columns of Matrix A" on:click={decreaseColumnsA} disabled={!columnsACanDecrease}>-</button>
-			<button title="Increase columns of Matrix A" on:click={increaseColumnsA} disabled={!columnsACanIncrease}>+</button>
+			<button title="Decrease columns of Matrix A" on:click={decreaseColumnsA} disabled={!columnsACanDecrease}>－</button>
+			<button title="Increase columns of Matrix A" on:click={increaseColumnsA} disabled={!columnsACanIncrease}>＋</button>
 		</div>
 		<div class="matrix" style={`--rows: ${rowsA}; --columns: ${columnsA};`}>
 			{#each matrixA as rows}
@@ -431,21 +471,28 @@
 		</div>
 	</div>
 	<div class="operator grid-operator">
-		&times;
+		<label for="alignment" titel="Toggle matrix alignment">&times;</label>
 	</div>
 	
 	<div class="matrix-control grid-operand-2">
-		<div class="matrix-label">Matrix B<br><span>({rowsB} rows, {columnsB} columns)</span></div>
+		<div class="matrix-label">
+			<span>Matrix B</span>
+			<span>({rowsB} rows, {columnsB} columns)</span>
+			<span class="button-row">
+				<button title="Clear Matrix B" on:click={clearB}>0</button>
+				<button title="Make Matrix B diagonal" on:click={diagonalB}>⋱</button>
+				<button on:click={shuffleB} title="Shuffle values of Matrix B">⚄</button>
+			</span>
+		</div>
 		<div class="control-corner">
-			<button on:click={shuffleB} title="Shuffle values of Matrix B">🔀️</button>
 		</div>
 		<div class="control-vertical">
-			<button title="Decrease rows of Matrix B" on:click={decreaseRowsB} disabled={!rowsBCanDecrease}>-</button>
-			<button title="Increase rows of Matrix B" on:click={increaseRowsB} disabled={!rowsBCanIncrease}>+</button>
+			<button title="Decrease rows of Matrix B" on:click={decreaseRowsB} disabled={!rowsBCanDecrease}>－</button>
+			<button title="Increase rows of Matrix B" on:click={increaseRowsB} disabled={!rowsBCanIncrease}>＋</button>
 		</div>
 		<div class="control-horizontal">
-			<button title="Decrease columns of Matrix B" on:click={decreaseColumnsB} disabled={!columnsBCanDecrease}>-</button>
-			<button title="Increase columns of Matrix B" on:click={increaseColumnsB} disabled={!columnsBCanIncrease}>+</button>
+			<button title="Decrease columns of Matrix B" on:click={decreaseColumnsB} disabled={!columnsBCanDecrease}>－</button>
+			<button title="Increase columns of Matrix B" on:click={increaseColumnsB} disabled={!columnsBCanIncrease}>＋</button>
 		</div>
 		<div class="matrix" style={`--rows: ${rowsB}; --columns: ${columnsB};`}>
 		{#each matrixB as rows}
@@ -468,9 +515,9 @@
 	
 	<div class="matrix-control grid-result">
 		<div class="control-top">
-			<label><input type="checkbox" bind:checked={gridAlign}> Align matrices</label>
+			<label><input id="alignment" type="checkbox" bind:checked={gridAlign}> Align matrices</label>
 		</div>
-		<div class="matrix-label">Result<br><span>({rowsResult} rows, {columnsResult} columns)</span></div>
+		<div class="matrix-label"><span>Result</span><span>({rowsResult} rows, {columnsResult} columns)</span></div>
 	<div class="matrix" style={`--rows: ${rowsA}; --columns: ${columnsB};`}>
 	{#each result as rows, r}
 		{#each rows as v, c}
