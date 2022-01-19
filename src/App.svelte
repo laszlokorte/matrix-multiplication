@@ -1,6 +1,6 @@
 <script>
-	const rowLimit = 5
-	const columnLimit = 5
+	const rowLimit = 7
+	const columnLimit = rowLimit
 	let rowsA = 4
 	let columnsA = 3
 	$: rowsB = columnsA
@@ -146,6 +146,29 @@
 	function diagonalB() {
 		valuesB = Array(rowLimit*columnLimit).fill(0).map((x,i) => i%columnLimit == Math.floor(i/columnLimit) ? 1 : x)
 	}
+
+	function transpose() {
+		const newValuesA = Array(rowLimit*columnLimit).fill(0).map((_,num) => {
+			const column = num%columnLimit
+			const row = Math.floor(num/columnLimit)
+
+			return valuesB[column*columnLimit + row]
+		})
+		const newValuesB = Array(rowLimit*columnLimit).fill(0).map((_,num) => {
+			const column = num%columnLimit
+			const row = Math.floor(num/columnLimit)
+
+			return valuesA[column*columnLimit + row]
+		})
+
+		valuesA = newValuesA
+		valuesB = newValuesB
+
+		const oldRowsA = rowsA
+		rowsA = columnsB
+		columnsA = rowsB
+		columnsB = oldRowsA
+	}
 </script>
 
 <style>
@@ -205,6 +228,8 @@
 		gap: 0.2em;
 		padding: 0.5em;
 		grid-area: content;
+		justify-self: center;
+		align-self: center;
 	}
 	
 	.matrix::before {
@@ -249,7 +274,7 @@
 	
 	.matrix-control {
 		display: grid;
-		grid-template-columns: [vertical-start] minmax(2em, 1fr) [vertical-end content-start horizontal-start label-start] auto [content-end horizontal-end label-end] minmax(2em, 1fr);
+		grid-template-columns: [vertical-start label-start] minmax(2em, 1fr) [vertical-end content-start horizontal-start] auto [content-end horizontal-end] minmax(2em, 1fr) [label-end];
 		grid-template-rows: [horizontal-start] minmax(2em, 1fr) [horizontal-end vertical-start content-start] auto [ vertical-end content-end label-start] minmax(2em, 1fr) [label-end];
 		align-items: start;
 		justify-items: start;
@@ -411,7 +436,7 @@
 
 	p {
 		max-width: 40em;
-		margin: 1em auto;
+		margin: 0 auto;
 	}
 </style>
 
@@ -432,6 +457,9 @@
 
 <p>
 	By checking the <strong>Align Matrices</strong> checkbox you can align the Matrix B above the result matrix so that the resulting cells match the rows and columns of their calculation. 
+</p>
+<p>
+	The Result Matrix can be tranposed (⬔, rows and columns swapped) by swapping Matrix A and Matrix B and transposing each of them.
 </p>
 	
 	<div class="equation" class:grid-align={gridAlign}>
@@ -517,7 +545,11 @@
 		<div class="control-top">
 			<label><input id="alignment" type="checkbox" bind:checked={gridAlign}> Align matrices</label>
 		</div>
-		<div class="matrix-label"><span>Result</span><span>({rowsResult} rows, {columnsResult} columns)</span></div>
+		<div class="matrix-label">
+			<span>Result</span>
+			<span>({rowsResult} rows, {columnsResult} columns)</span>
+			<span><button title="Transpose and Swap Matrix A and B to Transpose the Result" on:click={transpose}>⬔</button></span>
+		</div>
 	<div class="matrix" style={`--rows: ${rowsA}; --columns: ${columnsB};`}>
 	{#each result as rows, r}
 		{#each rows as v, c}
