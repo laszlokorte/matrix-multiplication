@@ -1,4 +1,6 @@
 <script>
+	import {onMount} from 'svelte'
+
 	const rowLimit = 7
 	const columnLimit = rowLimit
 	let rowsA = 4
@@ -28,7 +30,7 @@
 	$: matrixA = Array(rowsA).fill(0).map((v,r) => Array(columnsA).fill(0).map((_,c) => r*columnLimit + c))
 	$: matrixB = Array(rowsB).fill(0).map((v,r) => Array(columnsB).fill(0).map((_,c) => r*columnLimit + c))
 	
-  $: result = Array(rowsA).fill(0).map((v,r) => Array(columnsB).fill(0).map((_, c) => {
+  	$: result = Array(rowsA).fill(0).map((v,r) => Array(columnsB).fill(0).map((_, c) => {
 		let sum = 0;
 		
 		for(let x=0;x<columnsA;x++) {
@@ -119,7 +121,6 @@
 	}
 
 	function jumpStep(evt) {
-		console.log(evt.currentTarget.dataset.step)
 		setFocusStep(1*evt.currentTarget.dataset.step)
 	}
 	
@@ -169,6 +170,53 @@
 		columnsA = rowsB
 		columnsB = oldRowsA
 	}
+
+	const hashparser = new RegExp('^(\\d+):(\\d+):(\\d+):(\\d+)(a?)((?:;[^;\\*]*)*)(\\*?[^;\\*]*(?:;[^;\\*]*)*)$','i')
+	function loadHash(hash) {
+		const m = hashparser.exec(hash)
+		if(m !== null) {
+			const [parsedRowsA, parsedColumnsA, parsedColumnsB, parsedFocus] = m.slice(1, 5).map((x) => parseInt(x, 10))
+			const align = m[5] == 'a'
+
+			const parsedValuesA = m[6].split(';').map((x) => x?parseFloat(x):0).slice(1)
+			const parsedValuesB = m[7] ? m[7].slice(1).split(';').map((x) => x?parseFloat(x):0) : []
+
+			let valid = true
+			valid &&= parsedRowsA < rowLimit
+			valid &&= parsedColumnsA < rowLimit
+			valid &&= parsedColumnsA < columnLimit
+			valid &&= parsedColumnsB < columnLimit
+			valid &&= parsedFocus <= parsedRowsA*parsedColumnsB
+
+			if(valid) {
+				rowsA = parsedRowsA
+				columnsA = parsedColumnsA
+				columnsB = parsedColumnsB
+				gridAlign = align
+				focus = parsedFocus < 1 ? null : {column: (parsedFocus-1)%columnsB, row: Math.floor((parsedFocus-1)/columnsB)}
+				valuesA = valuesA.map((_,i) => parsedValuesA[i]||0)
+				valuesB = valuesB.map((_,i) => parsedValuesB[i]||0)
+			}
+		}
+	}
+
+	onMount(() => {
+		const listener = () => {
+			loadHash(window.location.hash.substr(1))
+		}
+
+		window.addEventListener('hashchange', listener)
+		listener()
+		return () => window.removeEventListener('hashchange', listener)
+	})
+
+	$: shareUrl = window.location.origin + window.location.pathname + '#' 
+	+ rowsA + ':' 
+	+ columnsA + ':' 
+	+ columnsB + ':' 
+	+ (focus ? focus.row*columnsB + focus.column + 1 : 0) 
+	+ (gridAlign?'a':'') 
+	+ ';' + valuesA.join(';') + '*' + valuesB.join(';')
 </script>
 
 <style>
@@ -438,6 +486,16 @@
 		max-width: 40em;
 		margin: 0 auto;
 	}
+
+	.sharelink {
+		width: 100%;
+		max-width: 20em;
+		text-align: left;
+	}
+
+	h3 {
+		margin: 3em 0 0;
+	}
 </style>
 
 
@@ -607,4 +665,14 @@
 	Select a cell in the result matrix to see how it is calculated or use the step slider to iterate through all cells in the result matrix.
 </p>
 {/if}
+
+<h3>Share this Matrix</h3>
+<input class="sharelink" on:click={(evt) => {
+	const e = evt.currentTarget
+	e.setSelectionRange(0, e.value.length); 
+	evt.preventDefault();
+	setTimeout(() => {
+		e.scrollLeft=0;
+	})
+}} type="text" readonly={true} value={shareUrl}>
 </div>
