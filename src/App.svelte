@@ -9,7 +9,7 @@
 	let columnsB = 4
 	let gridAlign = false
 
-	let useComplexNumbers = true
+	let useComplexNumbers = false
 	let complexAsMatrix = false
 	
 	$: showComplexMatrix = useComplexNumbers && complexAsMatrix
@@ -18,19 +18,19 @@
 	let focus = null
 	let inputFocus = 'a-3'
 
-	$: focusNumber = focus ? (focus.row*columnsB*(showComplexMatrix?4:1) + (focus.column)*(showComplexMatrix?2:1))  : 0
+	$: focusNumber = focus ? (focus.row*columnsB*(showComplexMatrix?4:1) + (focus.column)*(showComplexMatrix?2:1))+focus.subcolumn+focus.subrow*columnsB*(showComplexMatrix?2:1) : 0
 
 	let validA = Array(rowLimit*columnLimit).fill(0).map(() => true)
 	let validB = Array(rowLimit*columnLimit).fill(0).map(() => true)
 	
 	let valuesA = Array(rowLimit*columnLimit).fill(0).map(() => [
 		Math.round(10*Math.random()),
-		0*Math.round(10*Math.random()),
+		(useComplexNumbers?1:0)*Math.round(10*Math.random()),
 	])
 
 	let valuesB = Array(rowLimit*columnLimit).fill(0).map(() => [
 		Math.round(10*Math.random()),
-		0*Math.round(10*Math.random()),
+		(useComplexNumbers?1:0)*Math.round(10*Math.random()),
 	])
 	
 	$: columnsResult = columnsB
@@ -283,7 +283,8 @@
 		focus = {
 			row: 1*evt.currentTarget.dataset.row, 
 			column: 1*evt.currentTarget.dataset.column,
-			dim: Object.hasOwnProperty(evt.currentTarget.dataset, ) ? evt.currentTarget.dataset.column : 0
+			subrow: 1*(evt.currentTarget.dataset.subrow||0),
+			subcolumn: 1*(evt.currentTarget.dataset.subcolumn||0),
 		}
 	}
 	
@@ -292,10 +293,13 @@
 		if(num < 0) {
 			focus = null
 		} else {
+			const col = (num%(columnsB*multiplyer));
+			const row = Math.floor(num/(columnsB*multiplyer));
 			focus = {
-				column: Math.round((num%(columnsB*multiplyer))/multiplyer), 
-				row: Math.round(num/columnsB/multiplyer/multiplyer),
-				dim: ((num%(showComplexMatrix*showComplexMatrix)+4)%4),
+				column: Math.floor(col/multiplyer), 
+				row: Math.floor(row/multiplyer),
+				subrow: row%multiplyer,
+				subcolumn: col%multiplyer,
 			}
 		}
 	}
@@ -307,7 +311,7 @@
 	function shuffleA() {
 		valuesA = Array(rowLimit*columnLimit).fill(0).map(() => [
 			Math.round(10*Math.random()),
-			Math.round(10*Math.random())
+			(useComplexNumbers?1:0)*Math.round(10*Math.random())
 		])
 		validA = Array(rowLimit*columnLimit).fill(0).map(() => true)
 	}
@@ -315,7 +319,7 @@
 	function shuffleB() {
 		valuesB = Array(rowLimit*columnLimit).fill(0).map(() => [
 			Math.round(10*Math.random()),
-			Math.round(10*Math.random())
+			(useComplexNumbers?1:0)*Math.round(10*Math.random())
 		])
 		validB = Array(rowLimit*columnLimit).fill(0).map(() => true)
 	}
@@ -369,15 +373,19 @@
 		columnsB = oldRowsA
 	}
 
-	const hashparser = new RegExp('^(\\d+):(\\d+):(\\d+):(\\d+)(a?)((?:;[^;\\*]*)*)(\\*?[^;\\*]*(?:;[^;\\*]*)*)$','i')
+	const hashparser = new RegExp('^(\\d+):(\\d+):(\\d+):(\\d+)(a?)(c?)(m?)((?:;[^;\\*]*)*)(\\*?[^;\\*]*(?:;[^;\\*]*)*)$','i')
 	function loadHash(hash) {
 		const m = hashparser.exec(hash)
 		if(m !== null) {
 			const [parsedRowsA, parsedColumnsA, parsedColumnsB, parsedFocus] = m.slice(1, 5).map((x) => parseInt(x, 10))
 			const align = m[5] == 'a'
+			const complex = m[6] == 'c'
+			const complexmatrix = m[7] == 'm'
 
-			const parsedValuesA = m[6].split(';').map((x) => x?parseFloat(x):0).slice(1)
-			const parsedValuesB = m[7] ? m[7].slice(1).split(';').map((x) => x?parseFloat(x):0) : []
+			const parsedValuesA = m[8].split(';').slice(1).map(
+				(dims) => dims.split(',').slice(0,2).map((x) => x?parseFloat(x):0)
+				)
+			const parsedValuesB = m[9] ? m[9].slice(1).split(';').map((dims) => dims.split(',').slice(0, 2).map((x) => x?parseFloat(x):0)) : []
 
 			let valid = true
 			valid &&= parsedRowsA < rowLimit
@@ -391,9 +399,16 @@
 				columnsA = parsedColumnsA
 				columnsB = parsedColumnsB
 				gridAlign = align
-				focus = parsedFocus < 1 ? null : {column: (parsedFocus-1)%columnsB, row: Math.floor((parsedFocus-1)/columnsB)}
-				valuesA = valuesA.map((_,i) => parsedValuesA[i]||0)
-				valuesB = valuesB.map((_,i) => parsedValuesB[i]||0)
+				useComplexNumbers = complex
+				complexAsMatrix = complexmatrix
+				focus = parsedFocus < 1 ? null : {
+					column: (parsedFocus-1)%columnsB, 
+					row: Math.floor((parsedFocus-1)/columnsB),
+					subrow:0,
+					subcolumn:0,
+				}
+				valuesA = valuesA.map((_,i) => parsedValuesA[i]||[0,0])
+				valuesB = valuesB.map((_,i) => parsedValuesB[i]||[0,0])
 				validA = Array(rowLimit*columnLimit).fill(0).map(() => true)
 				validB = Array(rowLimit*columnLimit).fill(0).map(() => true)
 			}
@@ -416,6 +431,8 @@
 	+ columnsB + ':' 
 	+ (focus ? focus.row*columnsB + focus.column + 1 : 0) 
 	+ (gridAlign?'a':'') 
+	+ (useComplexNumbers?'c':'') 
+	+ (complexAsMatrix?'m':'') 
 	+ ';' + valuesA.join(';') + '*' + valuesB.join(';')
 </script>
 
@@ -621,16 +638,50 @@
 	
 	.focus {
 		grid-area: inner;
-		background: #f0a7;
-		padding: 0.5em;
+		background: #f0a2;
+		display: grid;
+		align-items: stretch;
+		justify-items: stretch;
+		gap: 0.1em;
+		grid-template-rows: [full-start] repeat(var(--subdivision), 1fr) [full-end];
+		grid-template-columns: [full-start] repeat(var(--subdivision), 1fr) [full-end];
 	}
 	
 	.focus.vertical {
-		background: #0af7;
+		background: #0af2;
+		grid-template-rows: [full-start] repeat(var(--rows), 1fr) [full-end];
 	}
 	
 	.focus.horizontal {
-		background: #0fa7;
+		background: #0fa2;
+		grid-template-columns: [full-start] repeat(var(--columns), 1fr) [full-end];
+	}
+
+	.sub-focus {
+		background: #f0a5;
+		grid-column: var(--subcolumn, full);
+		grid-row: var(--subrow, full);
+	}
+
+	.sub-focus.vertical {
+		background: #0af5;
+	}
+
+	.sub-focus.horizontal {
+		background: #0fa5;
+	}
+
+	.focus-eq {
+		background: #f0a5;
+		padding: 0.5em;
+	}
+
+	.focus-eq.vertical {
+		background: #0af5;
+	}
+
+	.focus-eq.horizontal {
+		background: #0fa5;
 	}
 	
 	.ghost {
@@ -751,6 +802,17 @@
 	fieldset label {
 		padding: 0.3em;
 	}
+
+	details {
+		min-width: 40em;
+		margin: 1em auto;
+	}
+
+	summary {
+		font-weight: bold;
+		cursor: pointer;
+		text-align: center;
+	}
 </style>
 
 
@@ -775,19 +837,41 @@
 	The Result Matrix can be tranposed (⬔, rows and columns swapped) by swapping Matrix A and Matrix B and transposing each of them.
 </p>
 
-<fieldset>
-	<legend>Domain</legend>
 
-	<ul class="inline-list">
-		<li><label><input type="radio" bind:group={useComplexNumbers} value={false}> Real Numbers</label></li>
-		<li><label><input type="radio" bind:group={useComplexNumbers} value={true}> Complex Numbers</label></li>
-	</ul>
+<details>
+	<summary>Complex Numbers?</summary>
 
-	<ul class="inline-list" class:hidden={!useComplexNumbers}>
-		<li><label><input type="radio" bind:group={complexAsMatrix} value={false}> Display complex as algebraic</label></li>
-		<li><label><input type="radio" bind:group={complexAsMatrix} value={true}> Display complex as matrix</label></li>
-	</ul>
-</fieldset>
+	<div class="controls">
+		<p>
+			A Matrix may contain even complex numbers. But a complex number is just another representation of a 2&times;2 real valued orthogonal matrix.  
+		</p>
+		<p>
+			So when thinking of a complex valued matrix, instead you can think of a real valued matrix of twice the size in both dimensions instead, with 2&times;2 neighbouring entries composing a complex number.
+		</p>
+		<p>
+			This also clarifies why the transposition for complex valued matrices (the hermitian) is defined as the complex conjugate of the classical transposition: The complex conjugate of a complex number corresponds the the transposition of the 2&times;2 matrix representation. When transposing the expanded matrix the transposition effects each 2&times;2 tile.
+		</p>
+		<p>
+			Below you can switch between the representations and see for yourself.
+		</p>
+
+		<fieldset>
+			<legend>Domain</legend>
+
+			<ul class="inline-list">
+				<li><label><input type="radio" bind:group={useComplexNumbers} value={false}> Real Numbers</label></li>
+				<li><label><input type="radio" bind:group={useComplexNumbers} value={true}> Complex Numbers</label></li>
+			</ul>
+
+			<ul class="inline-list" class:hidden={!useComplexNumbers}>
+				<li><label><input type="radio" bind:group={complexAsMatrix} value={false}> Complex Numbers as <code><i>a</i>+<i>b</i>j</code></label></li>
+				<li><label><input type="radio" bind:group={complexAsMatrix} value={true}> Complex numbers as 2&times;2 matrix</label></li>
+			</ul>
+		</fieldset>
+
+	</div>
+</details>
+
 	
 	<div class="equation" class:grid-align={gridAlign}>
 	<div class="matrix-control grid-operand-1">
@@ -829,7 +913,11 @@
 		<div class="matrix ghost" style={`--rows: ${rowsA}; --columns: ${columnsA};--subdivision: ${showComplexMatrix ? 2 : 1}`}>
 			{#if focus}
 			<div class="focus horizontal" style={`grid-row: ${focus.row+1} / span 1`}>
-				
+				{#if showComplexMatrix}
+				<div class="sub-focus horizontal" style={`--subrow: ${focus.subrow+1}`}></div>
+				{:else}
+				<div class="sub-focus horizontal"></div>
+				{/if}
 			</div>
 			{/if}
 		</div>
@@ -877,7 +965,11 @@
 		<div class="matrix ghost" style={`--rows: ${rowsB}; --columns: ${columnsB};--subdivision: ${showComplexMatrix ? 2 : 1}`}>
 			{#if focus}
 			<div class="focus vertical" style={`grid-column: ${focus.column+2} / span 1;`}>
-				
+				{#if showComplexMatrix}
+				<div class="sub-focus vertical" style={`--subcolumn: ${focus.subcolumn+1}`}></div>
+				{:else}
+				<div class="sub-focus vertical"></div>
+				{/if}
 			</div>
 			{/if}
 		</div>
@@ -900,10 +992,10 @@
 		{#each rows as v, c}
 		{#if complexAsMatrix && useComplexNumbers}
 		<div class="complex-matrix">
-		<output data-row={r} data-column={c} data-dim={0} on:click={setFocus}>{v[0]}</output>
-		<output data-row={r} data-column={c} data-dim={1} on:click={setFocus}>{-v[1]}</output>
-		<output data-row={r} data-column={c} data-dim={2} on:click={setFocus}>{v[1]}</output>
-		<output data-row={r} data-column={c} data-dim={3} on:click={setFocus}>{v[0]}</output>
+		<output data-row={r} data-column={c} data-subrow={0} data-subcolumn={0} on:click={setFocus}>{v[0]}</output>
+		<output data-row={r} data-column={c} data-subrow={0} data-subcolumn={1} on:click={setFocus}>{-v[1]}</output>
+		<output data-row={r} data-column={c} data-subrow={1} data-subcolumn={0} on:click={setFocus}>{v[1]}</output>
+		<output data-row={r} data-column={c} data-subrow={1} data-subcolumn={1} on:click={setFocus}>{v[0]}</output>
 		</div>
 		{:else}
 		<output data-row={r} data-column={c} on:click={setFocus}>{numberToString(v, useComplexNumbers)}</output>
@@ -914,6 +1006,11 @@
 		<div class="matrix ghost" style={`--rows: ${rowsA}; --columns: ${columnsB};--subdivision: ${showComplexMatrix ? 2 : 1}`}>
 			{#if focus}
 			<div class="focus" style={`grid-column: ${focus.column+2} / span 1;grid-row: ${focus.row+1} / span 1;`}>
+				{#if showComplexMatrix}
+				<div class="sub-focus"  style={`--subrow: ${focus.subrow+1}; --subcolumn: ${focus.subcolumn+1}`}></div>
+				{:else}
+				<div class="sub-focus"></div>
+				{/if}
 			</div>
 			{/if}
 		</div>
@@ -921,14 +1018,15 @@
 </div>
 	
 <dl>
-	<dt><label for="step">Step: <span style="display: inline-block; min-width: 4em; text-align: center;">{focus ? focusNumber : '-'}/{maxFocus}</span></label></dt>
-	<dd><input id="step" type="range" min="0" max={maxFocus} value={focusNumber} on:input={(evt) => setFocusStep(evt.currentTarget.value - 1)} /></dd>
+	<dt><label for="step">Step: <span style="display: inline-block; min-width: 4em; text-align: center;">{focus ? focusNumber+1 : '-'}/{maxFocus}</span></label></dt>
+	<dd><input id="step" type="range" min="0" max={maxFocus} value={focus ? focusNumber+1 : 0} on:input={(evt) => setFocusStep(evt.currentTarget.value - 1)} /></dd>
 	<dd>
 		<button data-step={focus ? focusNumber - 1 : -1} on:click={jumpStep} disabled={!focus || focus.row*columnsB + focus.column + 1 < 1}>⮜</button>
 		<button data-step={focus ? focusNumber + 1 : 0} disabled={focus && focus.row*columnsB + focus.column + 1 + 1 > maxFocus} on:click={jumpStep}>⮞</button></dd>
 </dl>
 
 {#if sum}
+{#if showComplexMatrix}
 <div class="equation">
 	{#each sum as [a,b],i}
 	{#if i > 0}
@@ -937,14 +1035,28 @@
 	</div>
 	{/if}
 	<div  class="group">
-		<div class="focus horizontal">
-			{numberToString(valuesA[a], useComplexNumbers)}
+		<div class="focus-eq horizontal">
+			{valuesA[a][focus.subrow]}
 		</div>
 		<div class="operator">
 			&times;
 		</div>
-		<div class="focus vertical">
-			{numberToString(valuesA[a], useComplexNumbers)}
+		<div class="focus-eq vertical">
+			{(1-2*focus.subcolumn)*valuesB[b][focus.subcolumn]}
+		</div>
+	</div>
+	<div class="operator">
+		+
+	</div>
+	<div  class="group">
+		<div class="focus-eq horizontal">
+			{(2*focus.subrow-1)*valuesA[a][(focus.subrow+1)%2]}
+		</div>
+		<div class="operator">
+			&times;
+		</div>
+		<div class="focus-eq vertical">
+			{valuesB[b][(focus.subcolumn+1)%2]}
 		</div>
 	</div>
 	{/each}
@@ -952,15 +1064,45 @@
 	<div class="operator">
 		=
 	</div>
-	<div class="focus">
+	<div class="focus-eq">
+		{result[focus.row][focus.column][(focus.subrow+focus.subcolumn)%2]}
+	</div>
+</div>
+{:else}
+<div class="equation">
+	{#each sum as [a,b],i}
+	{#if i > 0}
+	<div class="operator">
+		+
+	</div>
+	{/if}
+	<div  class="group">
+		<div class="focus-eq horizontal">
+			{numberToString(valuesA[a], useComplexNumbers)}
+		</div>
+		<div class="operator">
+			&times;
+		</div>
+		<div class="focus-eq vertical">
+			{numberToString(valuesB[b], useComplexNumbers)}
+		</div>
+	</div>
+	{/each}
+	
+	<div class="operator">
+		=
+	</div>
+	<div class="focus-eq">
 		{numberToString(result[focus.row][focus.column], useComplexNumbers)}
 	</div>
 </div>
+{/if}
 {:else}
 <p>
 	Select a cell in the result matrix to see how it is calculated or use the step slider to iterate through all cells in the result matrix.
 </p>
 {/if}
+
 
 <h3>Share this Matrix</h3>
 <input class="sharelink" on:click={(evt) => {
