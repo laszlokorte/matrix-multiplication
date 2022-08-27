@@ -1021,8 +1021,8 @@
 	<dt><label for="step">Step: <span style="display: inline-block; min-width: 4em; text-align: center;">{focus ? focusNumber+1 : '-'}/{maxFocus}</span></label></dt>
 	<dd><input id="step" type="range" min="0" max={maxFocus} value={focus ? focusNumber+1 : 0} on:input={(evt) => setFocusStep(evt.currentTarget.value - 1)} /></dd>
 	<dd>
-		<button data-step={focus ? focusNumber - 1 : -1} on:click={jumpStep} disabled={!focus || focus.row*columnsB + focus.column + 1 < 1}>⮜</button>
-		<button data-step={focus ? focusNumber + 1 : 0} disabled={focus && focus.row*columnsB + focus.column + 1 + 1 > maxFocus} on:click={jumpStep}>⮞</button></dd>
+		<button data-step={focus ? focusNumber - 1 : -1} on:click={jumpStep} disabled={!focus || focusNumber + 1 < 1}>⮜</button>
+		<button data-step={focus ? focusNumber + 1 : 0} disabled={focus && focusNumber + 1 >= maxFocus} on:click={jumpStep}>⮞</button></dd>
 </dl>
 
 {#if sum}
