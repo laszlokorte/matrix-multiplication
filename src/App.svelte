@@ -683,6 +683,15 @@
 	.focus-eq.horizontal {
 		background: #0fa5;
 	}
+
+	.focus-eq.complex {
+		border-left: 2px solid black;
+		border-right: 2px solid black;
+		border-top-left-radius: 0.5em 1em;
+		border-top-right-radius: 0.5em 1em;
+		border-bottom-left-radius: 0.5em 1em;
+		border-bottom-right-radius: 0.5em 1em;
+	}
 	
 	.ghost {
 		pointer-events: none;
@@ -1077,13 +1086,13 @@
 	</div>
 	{/if}
 	<div  class="group">
-		<div class="focus-eq horizontal">
+		<div class="focus-eq horizontal" class:complex={useComplexNumbers}>
 			{numberToString(valuesA[a], useComplexNumbers)}
 		</div>
 		<div class="operator">
 			&times;
 		</div>
-		<div class="focus-eq vertical">
+		<div class="focus-eq vertical" class:complex={useComplexNumbers}>
 			{numberToString(valuesB[b], useComplexNumbers)}
 		</div>
 	</div>
