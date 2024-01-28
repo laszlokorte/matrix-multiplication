@@ -1,6 +1,8 @@
 <script>
 	import {onMount} from 'svelte'
 
+
+    const decimalFormat = new Intl.NumberFormat('en-IN', { maximumFractionDigits: 4 })
 	const rowLimit = 7
 	const columnLimit = rowLimit
 	let rowsA = 4
@@ -95,7 +97,7 @@
 		if(Math.abs(num) === 1) {
 			return ''
 		} else {
-			return Math.abs(num)
+			return decimalFormat.format(Math.abs(num))
 		}
 	}
 
@@ -110,10 +112,10 @@
 			} else if(num[1]) {
 				return `${onlySign(num[1], true)}${dropIfOne(num[1])}j`
 			} else {
-				return `${num[0]}`
+				return `${decimalFormat.format(num[0])}`
 			}
 		} else {
-			return `${num[0]}`
+			return `${decimalFormat.format(num[0])}`
 		}
 	}
 
@@ -129,7 +131,7 @@
 		return {
 			isComplex: isComplex,
 			value: parseFloat(stripped),
-			invalid: !isComplex && (stripped === '' || stripped === '+' || stripped ==='-') || isNaN(parseFloat(stripped))
+			invalid: !isComplex && (stripped === '' || stripped === '+' || stripped ==='-') || isNaN(parseFloat(stripped)) || stripped.substr(stripped.length-1) === '.'
 		}
 	}
 
@@ -1001,10 +1003,10 @@
 		{#each rows as v, c}
 		{#if complexAsMatrix && useComplexNumbers}
 		<div class="complex-matrix">
-		<output data-row={r} data-column={c} data-subrow={0} data-subcolumn={0} on:click={setFocus}>{v[0]}</output>
-		<output data-row={r} data-column={c} data-subrow={0} data-subcolumn={1} on:click={setFocus}>{-v[1]}</output>
-		<output data-row={r} data-column={c} data-subrow={1} data-subcolumn={0} on:click={setFocus}>{v[1]}</output>
-		<output data-row={r} data-column={c} data-subrow={1} data-subcolumn={1} on:click={setFocus}>{v[0]}</output>
+		<output data-row={r} data-column={c} data-subrow={0} data-subcolumn={0} on:click={setFocus}>{decimalFormat.format(v[0])}</output>
+		<output data-row={r} data-column={c} data-subrow={0} data-subcolumn={1} on:click={setFocus}>{decimalFormat.format(-v[1])}</output>
+		<output data-row={r} data-column={c} data-subrow={1} data-subcolumn={0} on:click={setFocus}>{decimalFormat.format(v[1])}</output>
+		<output data-row={r} data-column={c} data-subrow={1} data-subcolumn={1} on:click={setFocus}>{decimalFormat.format(v[0])}</output>
 		</div>
 		{:else}
 		<output data-row={r} data-column={c} on:click={setFocus}>{numberToString(v, useComplexNumbers)}</output>
@@ -1045,13 +1047,13 @@
 	{/if}
 	<div  class="group">
 		<div class="focus-eq horizontal">
-			{valuesA[a][focus.subrow]}
+			{decimalFormat.format(valuesA[a][focus.subrow])}
 		</div>
 		<div class="operator">
 			&times;
 		</div>
 		<div class="focus-eq vertical">
-			{(1-2*focus.subcolumn)*valuesB[b][focus.subcolumn]}
+			{decimalFormat.format((1-2*focus.subcolumn)*valuesB[b][focus.subcolumn])}
 		</div>
 	</div>
 	<div class="operator">
@@ -1059,13 +1061,13 @@
 	</div>
 	<div  class="group">
 		<div class="focus-eq horizontal">
-			{(2*focus.subrow-1)*valuesA[a][(focus.subrow+1)%2]}
+			{decimalFormat.format((2*focus.subrow-1)*valuesA[a][(focus.subrow+1)%2])}
 		</div>
 		<div class="operator">
 			&times;
 		</div>
 		<div class="focus-eq vertical">
-			{valuesB[b][(focus.subcolumn+1)%2]}
+			{decimalFormat.format(valuesB[b][(focus.subcolumn+1)%2])}
 		</div>
 	</div>
 	{/each}
@@ -1074,7 +1076,7 @@
 		=
 	</div>
 	<div class="focus-eq">
-		{result[focus.row][focus.column][(focus.subrow+focus.subcolumn)%2]}
+		{decimalFormat.format(result[focus.row][focus.column][(focus.subrow+focus.subcolumn)%2])}
 	</div>
 </div>
 {:else}
